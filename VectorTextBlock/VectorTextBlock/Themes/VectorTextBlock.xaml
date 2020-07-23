@@ -1,0 +1,19 @@
+﻿<ResourceDictionary
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:l="clr-namespace:VectorTextBlock">
+
+    <ControlTemplate x:Key="VectorTextBlockTemplate" TargetType="{x:Type l:VectorTextBlock}">
+
+        <Border Background="{TemplateBinding Background}"
+                BorderBrush="{TemplateBinding BorderBrush}"
+                BorderThickness="{TemplateBinding BorderThickness}">
+            <Canvas x:Name="LayoutPanel"/>
+        </Border>
+    </ControlTemplate>
+
+    <Style  TargetType="{x:Type l:VectorTextBlock}">
+        <Setter Property="Template" Value="{StaticResource VectorTextBlockTemplate}"/>
+    </Style>
+
+</ResourceDictionary>
