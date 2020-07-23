@@ -50,13 +50,13 @@
             VerticalAlignment="Top"
             Foreground="Aqua"
             HorizontalAlignment="Left"
-            Margin="3,21,0,0" 
-            Width="783" Height="211"  />
+            Margin="4,57,0,0" 
+            Width="784" Height="211"  />
 
         <l:VectorTextBlock 
             FontSize="54"
             FontWeight="Bold"
-            Text="on curve" 
+            Text="on the curve" 
             PathFigure="{StaticResource PathFigure}"
             ContentAlignment="Center" 
             AutoScalePath="True"  
@@ -75,7 +75,7 @@
         <l:VectorTextBlock 
             FontSize="54"
             FontWeight="Bold"
-            Text="or under curve" 
+            Text="or under the curve" 
             PathFigure="{StaticResource PathFigure}"
             ContentAlignment="Center" 
             AutoScalePath="True"  
