@@ -7,7 +7,9 @@
 
         <Border Background="{TemplateBinding Background}"
                 BorderBrush="{TemplateBinding BorderBrush}"
-                BorderThickness="{TemplateBinding BorderThickness}">
+                BorderThickness="{TemplateBinding BorderThickness}"
+                Width="{TemplateBinding Width}"
+                Height="{TemplateBinding Height}">
             <Canvas x:Name="LayoutPanel"/>
         </Border>
     </ControlTemplate>
@@ -16,6 +18,8 @@
         <Setter Property="Fill" Value="{Binding Path=Foreground, RelativeSource={RelativeSource Self} }"/>
         <Setter Property="Stroke" Value="{Binding Path=Foreground, RelativeSource={RelativeSource Self} }"/>
         <Setter Property="Template" Value="{StaticResource VectorTextBlockTemplate}"/>
+        <Setter Property="Width" Value="Auto"/>
+        <Setter Property="Height" Value="Auto"/>
     </Style>
 
 </ResourceDictionary>

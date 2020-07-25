@@ -8,7 +8,7 @@ using System.Windows.Shapes;
 namespace VectorTextBlock
 {
     [TemplatePart(Name = "LayoutPanel", Type = typeof(Canvas))]
-    public class VectorTextBlock: Control
+    public class VectorTextBlock : Control
     {
         private static readonly Type OwnerType = typeof(VectorTextBlock);
 
@@ -98,7 +98,7 @@ namespace VectorTextBlock
         {
             if (!(d is VectorTextBlock vectorTextBlock)) return;
 
-            vectorTextBlock.OnTextChanged();
+            vectorTextBlock.UpdateText();
             vectorTextBlock.Refresh();
         }
         #endregion
@@ -163,7 +163,7 @@ namespace VectorTextBlock
 
             if (!(e.NewValue is PathFigure pathFigure))
             {
-                if (vectorTextBlock.TextPath!=null && vectorTextBlock.TextPath.GetHashCode() == vectorTextBlock._pathHash)
+                if (vectorTextBlock.TextPath != null && vectorTextBlock.TextPath.GetHashCode() == vectorTextBlock._pathHash)
                 {
                     vectorTextBlock.TextPath = null;
                 }
@@ -171,7 +171,7 @@ namespace VectorTextBlock
                 return;
             }
 
-            if(e.NewValue.IsEqual(e.OldValue))
+            if (e.NewValue.IsEqual(e.OldValue))
                 return;
 
             // vectorTextBlock._pathLength = vectorTextBlock.GetPathFigureLength(pathFigure);
@@ -181,7 +181,7 @@ namespace VectorTextBlock
                 vectorTextBlock.TextPath = new PathGeometry(new[] { pathFigure });
                 vectorTextBlock._pathHash = vectorTextBlock.TextPath.GetHashCode();//save hash to Refresh in designer mode
             }
-            
+
         }
 
         #endregion
@@ -209,7 +209,7 @@ namespace VectorTextBlock
                 return;
 
 
-            var value = (bool) e.NewValue;
+            var value = (bool)e.NewValue;
 
             if (value == false && vectorTextBlock.TextPath != null)
                 vectorTextBlock.TextPath.Transform = null;
@@ -263,11 +263,12 @@ namespace VectorTextBlock
         private static void OnContentAlignmentChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
         {
             if (!(d is VectorTextBlock vectorTextBlock)) return;
-            vectorTextBlock.OnTextChanged();
+            vectorTextBlock.UpdateText();
             vectorTextBlock.Refresh();
         }
 
         #endregion
+
 
         #region TextDecorations
         public static readonly DependencyProperty TextDecorationsProperty = DependencyProperty.Register(
@@ -314,7 +315,9 @@ namespace VectorTextBlock
         private int _pathHash;
         private Size _newSize;
 
-        Canvas _layoutPanel;
+        private Canvas _layoutPanel;
+
+        private bool _isDrawn;
 
         private FormattedText[] _formattedChars;
         private double _textLength;
@@ -345,8 +348,20 @@ namespace VectorTextBlock
 
             _layoutPanel.SizeChanged -= VectorTextBlock_SizeChanged;
             _layoutPanel.SizeChanged += VectorTextBlock_SizeChanged;
-        }
 
+            if (_isDrawn) return;
+            Refresh();
+            Update();
+        }
+        protected override Size MeasureOverride(Size availableSize)
+        {
+            UpdateText();
+
+            var width = Width > 0 ? Width : _textLength;
+            var height = Height > 0 ? Height : FontSize * 1.1;
+
+            return new Size(Math.Ceiling(width), Math.Ceiling(height));
+        }
         private static void OnChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
         {
             if (!(d is VectorTextBlock vectorTextBlock)) return;
@@ -361,32 +376,14 @@ namespace VectorTextBlock
         {
             if (!(d is VectorTextBlock vectorTextBlock)) return;
 
-            vectorTextBlock.OnTextChanged();
+            vectorTextBlock.UpdateText();
             vectorTextBlock.Refresh();
-        }
-
-        private void OnTextChanged()
-        {
-            _textLength = 0;
-            _formattedChars = null;
-            if (string.IsNullOrEmpty(Text)) return;
-
-            _formattedChars = new FormattedText[Text.Length];
-
-            for (int i = 0; i < Text.Length; i++)
-            {
-                var formattedText = getFormattedText(new string(Text[i], 1));
-
-                _formattedChars[i] = formattedText;//.Add(formattedText);
-                _textLength += formattedText.WidthIncludingTrailingWhitespace;
-            }
         }
         private void UpdateText()
         {
             _textLength = 0;
             _formattedChars = null;
-            if (Text == null || FontFamily == null)
-                return;
+            if (Text == null || FontFamily == null || FontSize <= 0) return;
 
             _formattedChars = new FormattedText[Text.Length];
 
@@ -396,7 +393,6 @@ namespace VectorTextBlock
 
                 _formattedChars[i] = formattedText;
                 _textLength += formattedText.WidthIncludingTrailingWhitespace;
-
             }
         }
         private FormattedText getFormattedText(string text)
@@ -474,18 +470,19 @@ namespace VectorTextBlock
         }
         private Geometry GetDefaultGeometry()
         {
-           var lineGeometry = new LineGeometry(new Point(0, 0), new Point(_newSize.Width, 0));
-           var height = FontSize * 1.1;
-           var translate = new TranslateTransform(0,height);
-           var transformGroup = new TransformGroup();
-           transformGroup.Children.Add(translate);
-           lineGeometry.Transform = transformGroup;
-           
-           return lineGeometry;
+            var width = _newSize.Width > 0 ? _newSize.Width : _textLength;
+            var lineGeometry = new LineGeometry(new Point(0, 0), new Point(width, 0));
+            var height = FontSize * 1.1;
+            var translate = new TranslateTransform(0, height);
+            var transformGroup = new TransformGroup();
+            transformGroup.Children.Add(translate);
+            lineGeometry.Transform = transformGroup;
+
+            return lineGeometry;
         }
         private void EnsureGeometry()
         {
-            if(_layoutPanel == null) return;
+            if (_layoutPanel == null) return;
 
             _layoutPanel.Children.Clear();
             _layoutPanel.Margin = Padding;
@@ -495,6 +492,8 @@ namespace VectorTextBlock
             var flatGeometry = textPath.GetFlattenedPathGeometry();
             var figure = flatGeometry.Figures[0];
             var pathLength = GetPathFigureLength(figure);
+
+            if (_textLength <= 0 || pathLength <= 0) return;
 
             var scalingFactor = ContentAlignment == HorizontalAlignment.Stretch ? pathLength / _textLength : 1;
 
@@ -517,7 +516,7 @@ namespace VectorTextBlock
 
             if (ShowPath)
             {
-                var path = new Path { Data = TextPath, Stroke = Foreground ?? Stroke };
+                var path = new Path { Data = textPath, Stroke = Foreground ?? Stroke };
                 _layoutPanel.Children.Add(path);
             }
 
@@ -551,14 +550,15 @@ namespace VectorTextBlock
 
                 progress += width / 2 / pathLength;
             }
-        }
 
+            _isDrawn = true;
+        }
         private void pushGeometry(Geometry geometry)
         {
-            if(_layoutPanel == null) return;
+            if (_layoutPanel == null) return;
             var groupPath = new Path { Data = geometry, Stroke = Stroke, Fill = Fill, StrokeThickness = StrokeThickness };
             _layoutPanel.Children.Add(groupPath);
-        } 
+        }
         private void UpdateSize()
         {
             if (TextPath == null || double.IsNaN(TextPath.Bounds.Width) || double.IsNaN(TextPath.Bounds.Height))
