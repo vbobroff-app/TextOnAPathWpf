@@ -48,7 +48,7 @@ namespace VectorTextBlock
             "StrokeThickness",
             typeof(double),
             OwnerType,
-            new FrameworkPropertyMetadata(1d, OnChanged));
+            new FrameworkPropertyMetadata(0d, OnChanged));
 
         public double StrokeThickness
         {
@@ -367,17 +367,15 @@ namespace VectorTextBlock
 
         private void OnTextChanged()
         {
-
+            _textLength = 0;
+            _formattedChars = null;
             if (string.IsNullOrEmpty(Text)) return;
 
             _formattedChars = new FormattedText[Text.Length];
-            _textLength = 0;
-
-            var fontSize = ContentAlignment == HorizontalAlignment.Stretch ? 100 : FontSize;
 
             for (int i = 0; i < Text.Length; i++)
             {
-                var formattedText = getFormattedText(new String(Text[i], 1), fontSize);//getFormattedText(ch.ToString(), fontSize);
+                var formattedText = getFormattedText(new string(Text[i], 1));
 
                 _formattedChars[i] = formattedText;//.Add(formattedText);
                 _textLength += formattedText.WidthIncludingTrailingWhitespace;
@@ -385,43 +383,41 @@ namespace VectorTextBlock
         }
         private void UpdateText()
         {
+            _textLength = 0;
+            _formattedChars = null;
             if (Text == null || FontFamily == null)
                 return;
 
             _formattedChars = new FormattedText[Text.Length];
-            _textLength = 0;
-
-            var fontSize = ContentAlignment == HorizontalAlignment.Stretch ? 100 : FontSize;
 
             for (int i = 0; i < Text.Length; i++)
             {
-                var formattedText = getFormattedText(new string(Text[i], 1), fontSize);
+                var formattedText = getFormattedText(new string(Text[i], 1));
 
                 _formattedChars[i] = formattedText;
                 _textLength += formattedText.WidthIncludingTrailingWhitespace;
 
             }
         }
-
-        private FormattedText getFormattedText(string text, double fontSize)
+        private FormattedText getFormattedText(string text)
         {
             var formattedText = new FormattedText(
                 text ?? "",
                 CultureInfo.CurrentUICulture,
                 FlowDirection,
                 new Typeface(FontFamily, FontStyle, FontWeight, FontStretch),
-                fontSize,
+                FontSize,
                 Brushes.Transparent,
                 VisualTreeHelper.GetDpi(this).PixelsPerDip)
             {
-                MaxLineCount = TextWrapping == TextWrapping.NoWrap ? 1 : int.MaxValue, Trimming = TextTrimming
+                MaxLineCount = TextWrapping == TextWrapping.NoWrap ? 1 : int.MaxValue,
+                Trimming = TextTrimming
             };
 
             formattedText.SetTextDecorations(TextDecorations);
 
             return formattedText;
         }
-
         private void Refresh()
         {
             EnsureGeometry();
@@ -502,7 +498,7 @@ namespace VectorTextBlock
 
             var scalingFactor = ContentAlignment == HorizontalAlignment.Stretch ? pathLength / _textLength : 1;
 
-            double progress = 0;
+            double progress;
             switch (ContentAlignment)
             {
                 case HorizontalAlignment.Left:
@@ -515,18 +511,28 @@ namespace VectorTextBlock
                 case HorizontalAlignment.Right:
                     progress = Math.Abs(pathLength - _textLength) / pathLength;
                     break;
+                default:
+                    throw new ArgumentOutOfRangeException();
             }
-            
-            for (int i = 0; i < Text.Length; i++)
+
+            if (ShowPath)
             {
-                var width = scalingFactor * _formattedChars[i].WidthIncludingTrailingWhitespace;
-                double baseline = scalingFactor * _formattedChars[i].Baseline;
+                var path = new Path { Data = TextPath, Stroke = Foreground ?? Stroke };
+                _layoutPanel.Children.Add(path);
+            }
+
+            if (_formattedChars == null) return;
+
+            foreach (var ch in _formattedChars)
+            {
+                var width = scalingFactor * ch.WidthIncludingTrailingWhitespace;
+                var baseline = ch.Baseline;
 
                 progress += width / 2 / pathLength;
 
                 flatGeometry.GetPointAtFractionLength(progress, out var point, out var tangent);
 
-                var curGeometry = _formattedChars[i].BuildGeometry(new Point(0, 0));
+                var curGeometry = ch.BuildGeometry(new Point(0, 0));
 
                 if (!curGeometry.IsFrozen)
                 {
@@ -542,14 +548,8 @@ namespace VectorTextBlock
                     curGeometry.Transform = transformGroup;
                     pushGeometry(curGeometry);
                 }
-                
-                progress += width / 2 / pathLength;
-            }
 
-            if (ShowPath)
-            {
-                Path path = new Path {Data = TextPath, Stroke = Foreground?? Stroke};
-                _layoutPanel.Children.Add(path);
+                progress += width / 2 / pathLength;
             }
         }
 

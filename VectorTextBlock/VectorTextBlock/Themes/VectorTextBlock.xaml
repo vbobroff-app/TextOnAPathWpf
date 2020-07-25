@@ -13,6 +13,8 @@
     </ControlTemplate>
 
     <Style  TargetType="{x:Type l:VectorTextBlock}">
+        <Setter Property="Fill" Value="{Binding Path=Foreground, RelativeSource={RelativeSource Self} }"/>
+        <Setter Property="Stroke" Value="{Binding Path=Foreground, RelativeSource={RelativeSource Self} }"/>
         <Setter Property="Template" Value="{StaticResource VectorTextBlockTemplate}"/>
     </Style>
 
