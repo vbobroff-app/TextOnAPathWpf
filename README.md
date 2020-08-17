@@ -49,7 +49,7 @@ public class VectorTextBlock : Control
 |PathFigure|PathFigure|DependencyProperty|null| Curve path as PathFigure object
 |ShowPath|bool|DependencyProperty|false| Show Curve path, stroke equals Foreground
 |AutoScalePath|bool|DependencyProperty|false| If true the path bounds size is maximaed
-|Shift|doble|DependencyProperty|0| Horzontal shift the text to the path curve, if value is negative, the text will be under the curve
+|Shift|double|DependencyProperty|0| Horzontal shift the text to the path curve, if value is negative, the text will be under the curve
 |TextTrimming|TextTrimming|DependencyProperty|0| Text Trimming 
 |TextDecorations|TextDecorationCollection|DependencyProperty|0| Text Decorations
 |TextWrapping|TextWrapping|DependencyProperty|0| Text TextWrapping
