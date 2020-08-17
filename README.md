@@ -37,7 +37,7 @@ public class VectorTextBlock : Control
 ```
 
 #### Properties 
-*ChromeBase*
+*VektorTextBlock*
 |Name|Type|Category|Default|Description|
 |-----|-----|-------|-----|-----|
 |Text|string|DependencyPropertyy|null| Text
